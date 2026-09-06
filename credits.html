@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Love App - Acheter des Crédits</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .nav-btn {
+      width: 38px;
+      height: 38px;
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .title { font-size: 18px; font-weight: 800; }
+
+    /* Sélecteur de devise */
+    .currency-selector {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      padding: 10px 14px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+    }
+
+    .currency-label { font-size: 13px; color: #94a3b8; font-weight: 600; }
+
+    .currency-select {
+      background: #090d16;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    /* Card du solde */
+    .balance-card {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .balance-label { font-size: 13px; color: #94a3b8; margin-bottom: 4px; }
+    .balance-value { font-size: 32px; font-weight: 900; color: #f43f5e; }
+
+    /* Grid des packs */
+    .section-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #cbd5e1; }
+    .packs-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+    .pack-card {
+      background: #131c2e;
+      border: 2px solid #1e293b;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pack-card.selected {
+      border-color: #25d366;
+      background: rgba(37, 211, 102, 0.1);
+    }
+
+    .pack-info { display: flex; align-items: center; gap: 12px; }
+    .pack-icon { font-size: 24px; }
+    .pack-amount { font-size: 16px; font-weight: 800; }
+    .pack-desc { font-size: 12px; color: #94a3b8; }
+    .pack-price { font-size: 15px; font-weight: 800; color: #25d366; }
+
+    /* Moyens de paiement */
+    .payment-methods { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .pay-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 12px 8px;
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .pay-btn.selected {
+      border-color: #25d366;
+      background: rgba(37, 211, 102, 0.1);
+    }
+
+    /* Bouton WhatsApp */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="swipe.html" class="nav-btn">◀</a>
+    <div class="title">Recharger des crédits</div>
+    <div style="width: 38px;"></div>
+  </header>
+
+  <!-- Choix de la Devise / Région -->
+  <div class="currency-selector">
+    <span class="currency-label">Devise & Région :</span>
+    <select id="currency-select" class="currency-select" onchange="changeCurrency()">
+      <option value="XAF" selected>FCFA (Afrique)</option>
+      <option value="HTG">HTG (Haïti)</option>
+      <option value="USD">USD ($)</option>
+      <option value="EUR">EUR (€)</option>
+    </select>
+  </div>
+
+  <div class="balance-card">
+    <div class="balance-label">Mon solde actuel</div>
+    <div class="balance-value" id="user-credits">0 💎</div>
+  </div>
+
+  <div class="section-title">Choisissez un pack</div>
+  <div class="packs-grid" id="packs-container"></div>
+
+  <div class="section-title">Mode de paiement</div>
+  <div class="payment-methods" id="payment-methods-container"></div>
+
+  <button class="btn-submit" onclick="processPayment()">
+    <span>Payer via WhatsApp</span>
+    <span style="font-size: 18px;">💬</span>
+  </button>
+
+  <script>
+    const SUPABASE_URL = "https://uaykzrprjnvcsddmbiat.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_jilWD69Yd5z6AtDTRrfk2g_Y6F3AZIG";
+
+    // 🔴 METS TON NUMÉRO WHATSAPP ICI (sans le "+")
+    const AGENT_WHATSAPP_NUMBER = "237687289882"; 
+
+    let db = null;
+    let currentUser = null;
+    let currentBalance = 0;
+
+    let selectedCredits = 50;
+    let selectedPrice = 10000;
+    let selectedCurrency = "XAF";
+    let selectedPaymentMethod = "Mobile Money";
+
+    const pricingData = {
+      XAF: {
+        symbol: "FCFA",
+        packs: [
+          { credits: 50, price: 10000, desc: "Pour débuter les échanges", icon: "💎" },
+          { credits: 150, price: 16500, desc: "Pack populaire (+20% bonus)", icon: "🔥" },
+          { credits: 500, price: 25000, desc: "Accès illimité aux fonctions VIP", icon: "👑" }
+        ],
+        methods: ["Mobile Money", "Orange Money", "Carte"]
+      },
+      HTG: {
+        symbol: "HTG",
+        packs: [
+          { credits: 50, price: 1000, desc: "Pour débuter les échanges", icon: "💎" },
+          { credits: 150, price: 2000, desc: "Pack populaire (+20% bonus)", icon: "🔥" },
+          { credits: 500, price: 3000, desc: "Accès illimité aux fonctions VIP", icon: "👑" }
+        ],
+        methods: ["MonCash", "Natcash", "Carte"]
+      },
+      USD: {
+        symbol: "$",
+        packs: [
+          { credits: 50, price: 40, desc: "Pour débuter les échanges", icon: "💎" },
+          { credits: 150, price: 60, desc: "Pack populaire (+20% bonus)", icon: "🔥" },
+          { credits: 500, price: 100, desc: "Accès illimité aux fonctions VIP", icon: "👑" }
+        ],
+        methods: ["Carte Bancaire", "PayPal"]
+      },
+      EUR: {
+        symbol: "€",
+        packs: [
+          { credits: 50, price: 40, desc: "Pour débuter les échanges", icon: "💎" },
+          { credits: 150, price: 60, desc: "Pack populaire (+20% bonus)", icon: "🔥" },
+          { credits: 500, price: 100, desc: "Accès illimité aux fonctions VIP", icon: "👑" }
+        ],
+        methods: ["Carte Bancaire", "PayPal"]
+      }
+    };
+
+    function changeCurrency() {
+      selectedCurrency = document.getElementById('currency-select').value;
+      renderPacksAndPayments();
+    }
+
+    function renderPacksAndPayments() {
+      const currencyConfig = pricingData[selectedCurrency];
+      const packsContainer = document.getElementById('packs-container');
+      const methodsContainer = document.getElementById('payment-methods-container');
+
+      if (!currencyConfig || !packsContainer || !methodsContainer) return;
+
+      packsContainer.innerHTML = '';
+      currencyConfig.packs.forEach((pack, index) => {
+        const isSelected = index === 0;
+        if (isSelected) {
+          selectedCredits = pack.credits;
+          selectedPrice = pack.price;
+        }
+
+        const card = document.createElement('div');
+        card.className = `pack-card ${isSelected ? 'selected' : ''}`;
+        card.onclick = () => selectPack(card, pack.credits, pack.price);
+
+        card.innerHTML = `
+          <div class="pack-info">
+            <div class="pack-icon">${pack.icon}</div>
+            <div>
+              <div class="pack-amount">${pack.credits} Crédits</div>
+              <div class="pack-desc">${pack.desc}</div>
+            </div>
+          </div>
+          <div class="pack-price">${pack.price.toLocaleString()} ${currencyConfig.symbol}</div>
+        `;
+        packsContainer.appendChild(card);
+      });
+
+      methodsContainer.innerHTML = '';
+      currencyConfig.methods.forEach((method, index) => {
+        const isSelected = index === 0;
+        if (isSelected) selectedPaymentMethod = method;
+
+        const btn = document.createElement('div');
+        btn.className = `pay-btn ${isSelected ? 'selected' : ''}`;
+        btn.innerText = method;
+        btn.onclick = () => selectPayment(btn, method);
+        methodsContainer.appendChild(btn);
+      });
+    }
+
+    function selectPack(element, credits, price) {
+      document.querySelectorAll('.pack-card').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+      selectedCredits = credits;
+      selectedPrice = price;
+    }
+
+    function selectPayment(element, method) {
+      document.querySelectorAll('.pay-btn').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+      selectedPaymentMethod = method;
+    }
+
+    async function initCredits() {
+      // Afficher immédiatement les packs
+      renderPacksAndPayments();
+
+      // Connexion Supabase sécurisée
+      if (typeof supabase !== 'undefined' && SUPABASE_URL !== "https://uaykzrprjnvcsddmbiat.supabase.co") {
+        try {
+          db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          const { data: { user } } = await db.auth.getUser();
+          if (user) {
+            currentUser = user;
+            const { data: profile } = await db.from('profiles').select('credits').eq('id', user.id).single();
+            if (profile && profile.credits !== undefined) {
+              currentBalance = profile.credits;
+              document.getElementById('user-credits').innerText = `${currentBalance} 💎`;
+            }
+          }
+        } catch (e) {
+          console.log("Mode déconnecté ou Supabase non configuré.");
+        }
+      }
+    }
+
+    async function processPayment() {
+      const currencySymbol = pricingData[selectedCurrency].symbol;
+      const userId = currentUser ? currentUser.id : "DEMO_USER_ID";
+
+      if (db && currentUser) {
+        try {
+          await db.from('transactions').insert([
+            {
+              user_id: currentUser.id,
+              amount: selectedPrice,
+              currency: selectedCurrency,
+              credits_added: selectedCredits,
+              payment_method: selectedPaymentMethod,
+              status: 'pending'
+            }
+          ]);
+        } catch (e) {
+          console.error("Erreur lors de la réservation de transaction:", e);
+        }
+      }
+
+      const message = `Bonjour Agent,\n\nJe souhaite effectuer un rechargement de crédits sur Love❤️Alone.\n\n📌 *Détails de la commande :*\n- *ID Utilisateur :* ${userId}\n- *Pack :* ${selectedCredits} Crédits\n- *Montant à payer :* ${selectedPrice.toLocaleString()} ${currencySymbol}\n- *Moyen de paiement :* ${selectedPaymentMethod}\n\nMerci de me donner la procédure de paiement.`;
+
+      const whatsappUrl = `https://wa.me/${AGENT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+      window.location.href = whatsappUrl;
+    }
+
+    // Charger les éléments dès le chargement de la page
+    document.addEventListener('DOMContentLoaded', initCredits);
+  </script>
+</body>
+</html>
