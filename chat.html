@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Love App - Chat Multi-Média</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #131c2e;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      height: 60px;
+    }
+
+    .nav-btn {
+      width: 38px;
+      height: 38px;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .chat-user-info { display: flex; align-items: center; gap: 10px; }
+    .avatar-small { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; background: #1e293b; }
+    .chat-user-name { font-size: 15px; font-weight: 800; }
+
+    .messages-container {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message-bubble {
+      max-width: 75%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .message-received {
+      align-self: flex-start;
+      background: #131c2e;
+      color: #f1f5f9;
+      border: 1px solid #1e293b;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-sent {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #e11d48, #9333ea);
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-media {
+      width: 100%;
+      max-width: 220px;
+      border-radius: 12px;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .message-time {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #131c2e;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-media-label {
+      width: 42px;
+      height: 42px;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    #media-file-input { display: none; }
+
+    .chat-input {
+      flex: 1;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      padding: 12px 16px;
+      border-radius: 20px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn-send {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #e11d48, #9333ea);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="swipe.html" class="nav-btn">◀</a>
+    <div class="chat-user-info">
+      <img id="chat-avatar" src="https://via.placeholder.com/150" class="avatar-small">
+      <div class="chat-user-name" id="chat-name">Sarah</div>
+    </div>
+    <div style="width: 38px;"></div>
+  </header>
+
+  <div class="messages-container" id="messages-box"></div>
+
+  <form class="chat-input-bar" onsubmit="sendMessage(event)">
+    <label for="media-file-input" class="btn-media-label">📁</label>
+    <!-- Accepte désormais les images ET les vidéos -->
+    <input type="file" id="media-file-input" accept="image/*,video/*" onchange="sendMedia(event)">
+
+    <input type="text" id="message-input" class="chat-input" placeholder="Message..." autocomplete="off">
+    <button type="submit" class="btn-send">➔</button>
+  </form>
+
+  <script>
+    const SUPABASE_URL = "https://uaykzrprjnvcsddmbiat.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_jilWD69Yd5z6AtDTRrfk2g_Y6F3AZIG";
+
+    let db = null;
+    let currentUser = null;
+    let recipientId = "DEMO_MATCH_ID";
+
+    if (typeof supabase !== 'undefined' && SUPABASE_URL !== "https://uaykzrprjnvcsddmbiat.supabase.co") {
+      db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    async function initChat() {
+      if (!db) return;
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { window.location.href = "login.html"; return; }
+      currentUser = user;
+      loadMessages();
+      subscribeToNewMessages();
+    }
+
+    async function loadMessages() {
+      if (!db || !currentUser) return;
+      const { data: messages } = await db.from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${currentUser.id})`)
+        .order('created_at', { ascending: true });
+
+      const box = document.getElementById('messages-box');
+      box.innerHTML = '';
+      if (messages) {
+        messages.forEach(msg => {
+          renderMessage(msg.content, msg.media_url, msg.sender_id === currentUser.id);
+        });
+      }
+    }
+
+    function renderMessage(text, mediaUrl, isMine) {
+      const box = document.getElementById('messages-box');
+      const bubble = document.createElement('div');
+      bubble.className = `message-bubble ${isMine ? 'message-sent' : 'message-received'}`;
+      
+      const now = new Date();
+      const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+      let contentHtml = '';
+      if (text) contentHtml += `<div>${text}</div>`;
+
+      if (mediaUrl) {
+        const isVideo = mediaUrl.match(/\.(mp4|mov|webm)(\?.*)?$/i);
+        if (isVideo) {
+          contentHtml += `<video src="${mediaUrl}" class="chat-media" controls playsinline></video>`;
+        } else {
+          contentHtml += `<img src="${mediaUrl}" class="chat-media">`;
+        }
+      }
+
+      bubble.innerHTML = `${contentHtml}<div class="message-time">${timeStr}</div>`;
+      box.appendChild(bubble);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendMessage(event) {
+      event.preventDefault();
+      const input = document.getElementById('message-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      renderMessage(text, null, true);
+      input.value = '';
+
+      if (db && currentUser) {
+        await db.from('messages').insert([{ sender_id: currentUser.id, receiver_id: recipientId, content: text }]);
+      }
+    }
+
+    async function sendMedia(event) {
+      const file = event.target.files[0];
+      if (!file || !db || !currentUser) return;
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `chat/${currentUser.id}_${Date.now()}.${fileExt}`;
+
+      // Envoi dans le bucket Supabase 'avatars'
+      const { data, error } = await db.storage.from('avatars').upload(fileName, file);
+      if (error) return;
+
+      const { data: publicUrlData } = db.storage.from('avatars').getPublicUrl(fileName);
+      const mediaUrl = publicUrlData.publicUrl;
+
+      renderMessage(null, mediaUrl, true);
+
+      await db.from('messages').insert([
+        { sender_id: currentUser.id, receiver_id: recipientId, content: '', media_url: mediaUrl }
+      ]);
+    }
+
+    function subscribeToNewMessages() {
+      if (!db) return;
+      db.channel('messages-channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+          const newMsg = payload.new;
+          if (newMsg.receiver_id === currentUser.id && newMsg.sender_id === recipientId) {
+            renderMessage(newMsg.content, newMsg.media_url, false);
+          }
+        })
+        .subscribe();
+    }
+
+    window.addEventListener('DOMContentLoaded', initChat);
+  </script>
+</body>
+</html>
