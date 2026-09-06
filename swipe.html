@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Love❤️Alone - Découvrir</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      height: 40px;
+    }
+
+    .logo { font-size: 20px; font-weight: 900; color: #f43f5e; }
+
+    .nav-btn {
+      padding: 8px 14px;
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Container de la carte */
+    .card-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .card {
+      width: 100%;
+      height: 100%;
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .card-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    .card-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to top, rgba(9, 13, 22, 0.95) 15%, rgba(9, 13, 22, 0.3) 50%, transparent 80%);
+      z-index: 2;
+    }
+
+    .card-info {
+      position: relative;
+      z-index: 3;
+      padding: 20px;
+    }
+
+    .user-name { font-size: 24px; font-weight: 800; margin-bottom: 4px; color: #ffffff; }
+    .user-city { font-size: 14px; color: #38bdf8; margin-bottom: 8px; font-weight: 600; }
+    .user-bio { font-size: 13px; color: #cbd5e1; line-height: 1.4; }
+
+    /* Controls */
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+      padding-bottom: 8px;
+    }
+
+    .action-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .action-btn:active { transform: scale(0.9); }
+    .btn-pass { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+    .btn-like { background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; }
+
+    .empty-state {
+      position: absolute;
+      z-index: 3;
+      width: 100%;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 15px;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Love❤️Alone</div>
+    <a href="credits.html" class="nav-btn">💎 Crédits</a>
+  </header>
+
+  <div class="card-container">
+    <div class="card" id="profile-card">
+      <div class="empty-state">Recherche de profils...</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn btn-pass" onclick="manualNext()">❌</button>
+    <button class="action-btn btn-like" onclick="manualNext()">❤️</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://uaykzrprjnvcsddmbiat.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_jilWD69Yd5z6AtDTRrfk2g_Y6F3AZIG";
+
+    const DEFAULT_IMAGES = [
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80"
+    ];
+
+    let db = null;
+    let currentUser = null;
+    let profiles = [];
+    let currentIndex = 0;
+    let autoSwipeTimer = null;
+    const AUTO_SWIPE_DELAY = 5000; // 5 secondes
+
+    async function initSwipe() {
+      if (typeof supabase !== 'undefined' && SUPABASE_URL !== "https://uaykzrprjnvcsddmbiat.supabase.co") {
+        try {
+          db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          const { data: { user } } = await db.auth.getUser();
+          if (user) currentUser = user;
+        } catch (e) {
+          console.log("Supabase non connecté - Utilisation du mode démonstration.");
+        }
+      }
+      fetchProfiles();
+    }
+
+    async function fetchProfiles() {
+      if (db) {
+        try {
+          const { data } = await db
+            .from('profiles')
+            .select('*')
+            .neq('id', currentUser ? currentUser.id : '');
+
+          if (data && data.length > 0) {
+            profiles = data;
+          }
+        } catch (e) {
+          console.log("Erreur lors de la récupération des profils.");
+        }
+      }
+
+      // Profils de repli si la base de données ne renvoie rien
+      if (profiles.length === 0) {
+        profiles = [
+          { full_name: "Sophie", age: 23, city: "Douala", bio: "Passionnée de musique, de voyages et de découvertes ✈️", avatar_url: DEFAULT_IMAGES[0] },
+          { full_name: "Aïcha", age: 25, city: "Yaoundé", bio: "Souriante, toujours partante pour un bon café ☕", avatar_url: DEFAULT_IMAGES[1] },
+          { full_name: "Marc", age: 27, city: "Kribi", bio: "Amateur de sport et de paysages marins 🌊", avatar_url: DEFAULT_IMAGES[2] }
+        ];
+      }
+
+      showProfile(currentIndex);
+      startAutoSwipe();
+    }
+
+    function showProfile(index) {
+      const card = document.getElementById('profile-card');
+
+      if (index >= profiles.length) {
+        card.innerHTML = `<div class="empty-state">Vous avez vu tous les profils disponibles !</div>`;
+        stopAutoSwipe();
+        return;
+      }
+
+      const p = profiles[index];
+      const fallbackImg = DEFAULT_IMAGES[index % DEFAULT_IMAGES.length];
+      const avatar = (p.avatar_url && p.avatar_url.trim() !== '') ? p.avatar_url : fallbackImg;
+      const ageText = p.age ? `, ${p.age}` : '';
+
+      card.innerHTML = `
+        <img class="card-img" src="${avatar}" onerror="this.onerror=null; this.src='${fallbackImg}';" alt="${p.full_name || 'Profil'}">
+        <div class="card-overlay"></div>
+        <div class="card-info">
+          <div class="user-name">${p.full_name || 'Anonyme'}${ageText}</div>
+          <div class="user-city">📍 ${p.city || 'Ville non renseignée'}</div>
+          <div class="user-bio">${p.bio || 'Aucune description.'}</div>
+        </div>
+      `;
+    }
+
+    function nextProfile() {
+      currentIndex++;
+      showProfile(currentIndex);
+    }
+
+    function manualNext() {
+      nextProfile();
+      resetAutoSwipe();
+    }
+
+    function startAutoSwipe() {
+      stopAutoSwipe();
+      autoSwipeTimer = setInterval(() => {
+        nextProfile();
+      }, AUTO_SWIPE_DELAY);
+    }
+
+    function stopAutoSwipe() {
+      if (autoSwipeTimer) clearInterval(autoSwipeTimer);
+    }
+
+    function resetAutoSwipe() {
+      startAutoSwipe();
+    }
+
+    // Réinitialisation du chrono 5s lors d'une interaction utilisateur
+    document.addEventListener('touchstart', resetAutoSwipe);
+    document.addEventListener('click', resetAutoSwipe);
+
+    document.addEventListener('DOMContentLoaded', initSwipe);
+  </script>
+</body>
+</html>
