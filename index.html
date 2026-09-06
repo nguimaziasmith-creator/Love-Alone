@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Love❤️Alone - Rencontres & Connexions</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .logo { font-size: 22px; font-weight: 900; color: #f43f5e; }
+
+    .btn-support {
+      padding: 8px 12px;
+      background: rgba(37, 211, 102, 0.15);
+      border: 1px solid #25d366;
+      border-radius: 12px;
+      color: #25d366;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 28px 12px;
+      background: linear-gradient(180deg, #131c2e 0%, #090d16 100%);
+      border: 1px solid #1e293b;
+      border-radius: 24px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 { font-size: 24px; font-weight: 900; margin-bottom: 8px; line-height: 1.2; }
+    .hero p { font-size: 13px; color: #94a3b8; margin-bottom: 18px; line-height: 1.5; }
+
+    .cta-buttons { display: flex; flex-direction: column; gap: 10px; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 13px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    /* Section À Propos & Avantages */
+    .about-section {
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .about-section h2 { font-size: 18px; font-weight: 800; color: #f43f5e; margin-bottom: 12px; }
+    .about-section p { font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 14px; }
+
+    .benefits-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .benefit-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.4; }
+    .benefit-icon { color: #38bdf8; font-weight: bold; }
+
+    /* Footer Service Client */
+    footer {
+      margin-top: auto;
+      text-align: center;
+      padding: 16px 0;
+      border-top: 1px solid #1e293b;
+    }
+
+    .footer-support-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #1e293b;
+      color: #25d366;
+      border: 1px solid #25d366;
+      padding: 12px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">Love ❤️Alone</div>
+    <!-- Remplacer 237600000000 par ton numéro WhatsApp -->
+    <a href="https://wa.me/237687289882?text=Bonjour%20le%20Service%20Client," class="btn-support" target="_blank">
+      💬 Support
+    </a>
+  </header>
+
+  <!-- Hero Banner -->
+  <div class="hero">
+    <h1>Trouvez des connexions authentiques en un instant</h1>
+    <p>Une expérience de rencontre pensée pour aller droit à l'essentiel : simple, rapide et sans perte de temps.</p>
+
+    <div class="cta-buttons">
+      <a href="login.html" class="btn-primary">Commencer maintenant</a>
+      <a href="swipe.html" class="btn-secondary">Découvrir les profils</a>
+    </div>
+  </div>
+
+  <!-- Section À Propos & Avantages de l'application -->
+  <div class="about-section">
+    <h2>À Propos de Love❤️Alone</h2>
+    <p>
+      <strong>Love❤️Alone</strong> est une plateforme de rencontre nouvelle génération conçue pour maximiser vos chances de faire de vraies rencontres. Finis les profils inactifs et les démarches complexes : tout est pensé pour une prise en main immédiate.
+    </p>
+
+    <ul class="benefits-list">
+      <li class="benefit-item">
+        <span class="benefit-icon">✨</span>
+        <span><strong>Défilement Intelligent (Auto-Swipe) :</strong> Parcourez les profils automatiquement toutes les 5 secondes sans effort.</span>
+      </li>
+      <li class="benefit-item">
+        <span class="benefit-icon">🚀</span>
+        <span><strong>Connexion Instantanée :</strong> Discutez directement avec vos coups de cœur et échangez vos médias en haute définition.</span>
+      </li>
+      <li class="benefit-item">
+        <span class="benefit-icon">💳</span>
+        <span><strong>Paiement Simple & Flexible :</strong> Rechargez vos crédits via vos moyens de paiement locaux (Mobile Money, Orange Money, MonCash...) ou directement via WhatsApp.</span>
+      </li>
+      <li class="benefit-item">
+        <span class="benefit-icon">🛡️</span>
+        <span><strong>Sécurité & Confidentialité :</strong> Vos données et transactions sont sécurisées pour vous garantir une expérience en toute sérénité.</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Footer Service Client -->
+  <footer>
+    <!-- Remplacer 237600000000 par ton numéro WhatsApp -->
+    <a href="https://wa.me/237687289882?text=Bonjour,%20j'ai%20une%20question%20concernant%20Love%20App" class="footer-support-btn" target="_blank">
+      <span>Service Client WhatsApp</span>
+      <span>💬</span>
+    </a>
+  </footer>
+
+</body>
+</html>
