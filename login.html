@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Love❤️Alone - Connexion & Inscription</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 380px;
+      background: #131c2e;
+      border-radius: 28px;
+      padding: 30px 24px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-title {
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #e11d48, #9333ea);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .tabs {
+      display: flex;
+      background: #090d16;
+      padding: 4px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      border: 1px solid #1e293b;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: #1e293b;
+      color: #ffffff;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      padding: 14px 16px;
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: #e11d48;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #e11d48, #9333ea);
+      color: #ffffff;
+      border: none;
+      padding: 16px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: 0 8px 22px rgba(225, 29, 72, 0.4);
+      transition: transform 0.15s;
+    }
+
+    .btn-submit:active {
+      transform: scale(0.97);
+    }
+
+    .error-msg {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid #f43f5e;
+      color: #f43f5e;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      display: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <div class="brand-title">💖 Love❤️Alone</div>
+    <div class="brand-subtitle">Trouvez votre âme sœur en un swipe</div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">Se connecter</button>
+      <button class="tab-btn" id="tab-register" onclick="switchTab('register')">S'inscrire</button>
+    </div>
+
+    <div id="error-box" class="error-msg"></div>
+
+    <form id="auth-form" onsubmit="handleAuth(event)">
+      <!-- Champs spécifiques à l'inscription -->
+      <div id="register-fields" style="display: none;">
+        <div class="form-group">
+          <label>Prénom / Nom</label>
+          <input type="text" id="full_name" class="form-input" placeholder="Ex: Joël">
+        </div>
+        <div class="form-group">
+          <label>Âge</label>
+          <input type="number" id="age" class="form-input" placeholder="Ex: 24" min="18" max="99">
+        </div>
+        <div class="form-group">
+          <label>Ville</label>
+          <input type="text" id="city" class="form-input" placeholder="Ex: Douala">
+        </div>
+      </div>
+
+      <!-- Champs communs -->
+      <div class="form-group">
+        <label>Adresse e-mail</label>
+        <input type="email" id="email" class="form-input" placeholder="votre@email.com" required>
+      </div>
+
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••" required minlength="6">
+      </div>
+
+      <button type="submit" class="btn-submit" id="submit-btn">Se connecter</button>
+    </form>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://uaykzrprjnvcsddmbiat.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_jilWD69Yd5z6AtDTRrfk2g_Y6F3AZIG";
+
+    let db = null;
+    let mode = 'login'; // 'login' ou 'register'
+
+    if (typeof supabase !== 'undefined' && SUPABASE_URL !== "https://uaykzrprjnvcsddmbiat.supabase.co") {
+      db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    function switchTab(targetMode) {
+      mode = targetMode;
+      const loginTab = document.getElementById('tab-login');
+      const registerTab = document.getElementById('tab-register');
+      const registerFields = document.getElementById('register-fields');
+      const submitBtn = document.getElementById('submit-btn');
+      const errorBox = document.getElementById('error-box');
+
+      errorBox.style.display = 'none';
+
+      if (mode === 'register') {
+        registerTab.classList.add('active');
+        loginTab.classList.remove('active');
+        registerFields.style.display = 'block';
+        submitBtn.innerText = "Créer mon compte";
+      } else {
+        loginTab.classList.add('active');
+        registerTab.classList.remove('active');
+        registerFields.style.display = 'none';
+        submitBtn.innerText = "Se connecter";
+      }
+    }
+
+    async function handleAuth(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorBox = document.getElementById('error-box');
+      errorBox.style.display = 'none';
+
+      if (!db) {
+        // Mode démo si Supabase n'est pas encore configuré
+        alert("Mode Démo : Redirection vers la page Swipe !");
+        window.location.href = "swipe.html";
+        return;
+      }
+
+      if (mode === 'login') {
+        // --- CONNEXION ---
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          showError("Identifiants incorrects ou compte inexistant.");
+        } else {
+          window.location.href = "swipe.html";
+        }
+
+      } else {
+        // --- INSCRIPTION ---
+        const fullName = document.getElementById('full_name').value;
+        const age = parseInt(document.getElementById('age').value) || 20;
+        const city = document.getElementById('city').value || 'Douala';
+
+        if (!fullName) {
+          showError("Veuillez entrer votre prénom.");
+          return;
+        }
+
+        const { data, error } = await db.auth.signUp({ email, password });
+
+        if (error) {
+          showError(error.message);
+        } else if (data.user) {
+          // Création du profil utilisateur dans la table 'profiles'
+          await db.from('profiles').insert([
+            {
+              id: data.user.id,
+              full_name: fullName,
+              age: age,
+              city: city,
+              credits: 3, // Crédits gratuits de bienvenue
+              avatar_url: 'https://via.placeholder.com/400x600'
+            }
+          ]);
+
+          alert("Compte créé avec succès !");
+          window.location.href = "swipe.html";
+        }
+      }
+    }
+
+    function showError(message) {
+      const errorBox = document.getElementById('error-box');
+      errorBox.innerText = message;
+      errorBox.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
