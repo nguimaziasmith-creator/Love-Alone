@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Love❤️Alone- Mon Profil</title>
+  <link rel="manifest" href="manifest.json">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: #090d16;
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 50px;
+      margin-bottom: 20px;
+    }
+
+    .nav-btn {
+      width: 42px;
+      height: 42px;
+      background: #131c2e;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-decoration: none;
+      font-size: 18px;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .profile-card {
+      background: #131c2e;
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Conteneur média */
+    .media-preview-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #090d16;
+      border: 2px dashed #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .media-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .upload-btn-label {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #e11d48, #9333ea);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.4);
+    }
+
+    #file-input { display: none; }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-textarea {
+      resize: none;
+      height: 80px;
+    }
+
+    .btn-save {
+      width: 100%;
+      background: linear-gradient(135deg, #e11d48, #9333ea);
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn-logout {
+      width: 100%;
+      background: #1e293b;
+      color: #f43f5e;
+      border: 1px solid #334155;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+
+    .status-msg {
+      font-size: 12px;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="swipe.html" class="nav-btn">◀</a>
+    <div class="title">Mon Profil</div>
+    <div style="width: 42px;"></div>
+  </header>
+
+  <div class="profile-card">
+    <div class="media-preview-container" id="media-box">
+      <span id="upload-placeholder" style="color: #64748b; font-size: 13px;">Aucun média sélectionné</span>
+      <label for="file-input" class="upload-btn-label">📷 Changer photo/vidéo</label>
+      <input type="file" id="file-input" accept="image/*,video/*" onchange="uploadMedia(event)">
+    </div>
+
+    <form onsubmit="saveProfile(event)">
+      <div class="form-group">
+        <label>Prénom</label>
+        <input type="text" id="full_name" class="form-input" required>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <div class="form-group" style="flex: 1;">
+          <label>Âge</label>
+          <input type="number" id="age" class="form-input" min="18" max="99" required>
+        </div>
+        <div class="form-group" style="flex: 2;">
+          <label>Ville</label>
+          <input type="text" id="city" class="form-input" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Bio (Description)</label>
+        <textarea id="bio" class="form-textarea" placeholder="Racontez quelque chose sur vous..."></textarea>
+      </div>
+
+      <button type="submit" class="btn-save">Enregistrer les modifications</button>
+    </form>
+
+    <div id="status-msg" class="status-msg"></div>
+
+    <button class="btn-logout" onclick="logout()">Se déconnecter</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "TA_SUPABASE_URL";
+    const SUPABASE_KEY = "TA_SUPABASE_ANON_KEY";
+
+    let db = null;
+    let currentUser = null;
+    let currentAvatarUrl = "";
+
+    if (typeof supabase !== 'undefined' && SUPABASE_URL !== "TA_SUPABASE_URL") {
+      db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    async function loadUserProfile() {
+      if (!db) return;
+
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      currentUser = user;
+
+      const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single();
+
+      if (profile) {
+        document.getElementById('full_name').value = profile.full_name || '';
+        document.getElementById('age').value = profile.age || 20;
+        document.getElementById('city').value = profile.city || '';
+        document.getElementById('bio').value = profile.bio || '';
+        
+        if (profile.avatar_url) {
+          currentAvatarUrl = profile.avatar_url;
+          renderMediaPreview(profile.avatar_url);
+        }
+      }
+    }
+
+    function renderMediaPreview(url) {
+      const mediaBox = document.getElementById('media-box');
+      const placeholder = document.getElementById('upload-placeholder');
+      if (placeholder) placeholder.remove();
+
+      const isVideo = url.match(/\.(mp4|mov|webm)(\?.*)?$/i);
+      
+      const existingMedia = mediaBox.querySelector('img, video');
+      if (existingMedia) existingMedia.remove();
+
+      if (isVideo) {
+        const video = document.createElement('video');
+        video.className = 'media-preview';
+        video.src = url;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.playsInline = true;
+        mediaBox.appendChild(video);
+      } else {
+        const img = document.createElement('img');
+        img.className = 'media-preview';
+        img.src = url;
+        mediaBox.appendChild(img);
+      }
+    }
+
+    async function uploadMedia(event) {
+      const file = event.target.files[0];
+      if (!file || !db || !currentUser) return;
+
+      showStatus("Téléversement en cours...", "#f59e0b");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+
+      // 1. Téléverser le fichier dans le Bucket 'avatars'
+      const { data, error } = await db.storage.from('avatars').upload(fileName, file, { upsert: true });
+
+      if (error) {
+        showStatus("Erreur d'envoi du média.", "#f43f5e");
+        return;
+      }
+
+      // 2. Obtenir l'URL publique du fichier
+      const { data: publicUrlData } = db.storage.from('avatars').getPublicUrl(fileName);
+      currentAvatarUrl = publicUrlData.publicUrl;
+
+      // 3. Mettre à jour l'image affichée et enregistrer dans la base
+      renderMediaPreview(currentAvatarUrl);
+      await db.from('profiles').update({ avatar_url: currentAvatarUrl }).eq('id', currentUser.id);
+
+      showStatus("Média mis à jour avec succès !", "#10b981");
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      if (!db || !currentUser) return;
+
+      const full_name = document.getElementById('full_name').value;
+      const age = parseInt(document.getElementById('age').value);
+      const city = document.getElementById('city').value;
+      const bio = document.getElementById('bio').value;
+
+      const { error } = await db.from('profiles').update({
+        full_name,
+        age,
+        city,
+        bio,
+        avatar_url: currentAvatarUrl
+      }).eq('id', currentUser.id);
+
+      if (error) {
+        showStatus("Erreur lors de la sauvegarde.", "#f43f5e");
+      } else {
+        showStatus("Profil mis à jour !", "#10b981");
+      }
+    }
+
+    async function logout() {
+      if (db) await db.auth.signOut();
+      window.location.href = "login.html";
+    }
+
+    function showStatus(msg, color) {
+      const box = document.getElementById('status-msg');
+      box.innerText = msg;
+      box.style.color = color;
+      box.style.display = 'block';
+    }
+
+    window.addEventListener('DOMContentLoaded', loadUserProfile);
+  </script>
+</body>
+</html>
